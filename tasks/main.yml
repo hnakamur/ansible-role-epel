@@ -1,0 +1,16 @@
+---
+# tasks file for epel
+- shell: rpm -q epel-release > /dev/null
+  register: epel_installed
+  failed_when: epel_installed.rc not in [0, 1]
+  changed_when: false
+#- yum: name=epel-release state=latest
+#  when: epel_installed.rc == 0
+- set_fact: epel_url="{{ epel_base_url }}/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}"
+  when: epel_installed.rc == 1
+- shell: curl -s "{{ epel_url }}/" | sed -ne 's/.*\(epel-release-[0-9-]*.noarch.rpm\).*/\1/p'
+  register: epel_rpm
+  changed_when: false
+  when: epel_installed.rc == 1
+- yum: name="{{ epel_url }}/{{ epel_rpm.stdout }}"
+  when: epel_installed.rc == 1
